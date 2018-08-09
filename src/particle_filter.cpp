@@ -136,11 +136,13 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			double x_mu = map_landmarks.landmark_list[id-1].x_f;
 			double y = sense_y[i];
 			double y_mu = map_landmarks.landmark_list[id-1].y_f;
-			weight *= 1.0 / (2 * M_PI * std_x * std_y) * (double)exp(-(pow(x - x_mu, 2) / 2 / pow(std_x, 2) + pow(y - y_mu, 2) / 2 / pow(std_y, 2)));
+			double norm = 1.0 / (2 * M_PI * std_x * std_y);
+			double exponent = pow(x - x_mu, 2.0) / 2.0 / pow(std_x, 2.0) + pow(y - y_mu, 2.0) / 2.0 / pow(std_y, 2.0);
+			weight *=  norm * exp(-1.0 * exponent);
 			cout << std::scientific <<  "multiplied weight " << weight << endl;
-
 		}
 		particles[i].weight = weight;
+		weights[i] = weight;
 		cout << std::scientific << "particles " << i << " weight: " << weight << endl;
 	}
 }
