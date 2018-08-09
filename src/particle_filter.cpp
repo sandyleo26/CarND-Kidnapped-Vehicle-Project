@@ -33,7 +33,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
   std::normal_distribution<> dist_y{y, std[1]};
   std::normal_distribution<> dist_theta{theta, std[2]};
 
-	num_particles = 10;
+	num_particles = 30;
 	for (int i = 0; i < num_particles; i++) {
 		double sample_x, sample_y, sample_theta;
 		sample_x = dist_x(gen);
@@ -71,7 +71,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	for (int i = 0; i < num_particles; i++) {
 		double x_f, y_f, theta_f;
 		x_f = particles[i].x + velocity / yaw_rate * (sin(particles[i].theta + yaw_rate * delta_t) - sin(particles[i].theta));
-		y_f = particles[i].y + velocity / yaw_rate * (cos(particles[i].theta - cos(particles[i].theta + yaw_rate * delta_t)));
+		y_f = particles[i].y + velocity / yaw_rate * (cos(particles[i].theta) - cos(particles[i].theta + yaw_rate * delta_t));
 		theta_f = particles[i].theta + yaw_rate * delta_t;
 		particles[i].x = x_f + dist_x(gen);
 		particles[i].y = y_f + dist_y(gen);
@@ -99,7 +99,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	//   and the following is a good resource for the actual equation to implement (look at equation 
 	//   3.33
 	//   http://planning.cs.uiuc.edu/node99.html
-	std::cout.precision(2);
+
 	for (int i = 0; i < num_particles; i++) {
 		// find nearest associations
 		std::vector<int> associations;
@@ -139,7 +139,6 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			double norm = 1.0 / (2 * M_PI * std_x * std_y);
 			double exponent = pow(x - x_mu, 2.0) / 2.0 / pow(std_x, 2.0) + pow(y - y_mu, 2.0) / 2.0 / pow(std_y, 2.0);
 			weight *=  norm * exp(-1.0 * exponent);
-			cout << std::scientific <<  "multiplied weight " << weight << endl;
 		}
 		particles[i].weight = weight;
 		weights[i] = weight;
