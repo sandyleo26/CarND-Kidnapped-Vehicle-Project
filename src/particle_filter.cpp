@@ -108,7 +108,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 		for (int j = 0; j < observations.size(); j++) {
 			double x_m, y_m;
 			x_m = particles[i].x + cos(particles[i].theta) * observations[j].x - sin(particles[i].theta) * observations[j].y;
-			y_m = particles[i].y + sin(particles[i].theta) * observations[j].x - cos(particles[i].theta) * observations[j].y;
+			y_m = particles[i].y + sin(particles[i].theta) * observations[j].x + cos(particles[i].theta) * observations[j].y;
 			double min_dist = 1e+90;
 			int min_id;
 			for (int k = 0; k < map_landmarks.landmark_list.size(); k++) {
@@ -124,7 +124,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			sense_y.push_back(y_m);
 		}
 
-		SetAssociations(particles[i], associations, sense_x, sense_y);
+		// SetAssociations(particles[i], associations, sense_x, sense_y);
 
 		// calculate weight
 		double weight = 1.0;
@@ -132,9 +132,9 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 		double std_y = std_landmark[1];
 		for (int j = 0; j < observations.size(); j++) {
 			int id = associations[j];
-			double x = sense_x[i];
+			double x = sense_x[j];
 			double x_mu = map_landmarks.landmark_list[id-1].x_f;
-			double y = sense_y[i];
+			double y = sense_y[j];
 			double y_mu = map_landmarks.landmark_list[id-1].y_f;
 			double norm = 1.0 / (2 * M_PI * std_x * std_y);
 			double exponent = pow(x - x_mu, 2.0) / 2.0 / pow(std_x, 2.0) + pow(y - y_mu, 2.0) / 2.0 / pow(std_y, 2.0);
@@ -150,19 +150,10 @@ void ParticleFilter::resample() {
 	// TODO: Resample particles with replacement with probability proportional to their weight. 
 	// NOTE: You may find std::discrete_distribution helpful here.
 	//   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
-	std::vector<double> weights;
-	cout << "before resample weights: ";
-	for (int i = 0; i < num_particles; i++) {
-		weights.push_back(particles[i].weight);
-		cout << std::scientific << particles[i].weight << ", ";
-	}
-	cout << endl;
-
 	std::random_device rd;
   std::mt19937 gen(rd());
 	std::discrete_distribution<> d(weights.begin(), weights.end());
 	std::vector<Particle> newParticles;
-	cout << "resample index: ";
 	for (int i = 0; i < num_particles; i++) {
 		int index = d(gen);
 		newParticles.push_back(particles[index]);
