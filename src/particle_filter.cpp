@@ -102,40 +102,50 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
 	for (int i = 0; i < num_particles; i++) {
 		// find nearest associations
-		std::vector<int> associations;
-		std::vector<double> sense_x;
-		std::vector<double> sense_y;
+		std::vector<LandmarkObs> observations_transformed;
 		for (int j = 0; j < observations.size(); j++) {
 			double x_m, y_m;
 			x_m = particles[i].x + cos(particles[i].theta) * observations[j].x - sin(particles[i].theta) * observations[j].y;
 			y_m = particles[i].y + sin(particles[i].theta) * observations[j].x + cos(particles[i].theta) * observations[j].y;
 			double min_dist = 1e+90;
-			int min_id;
+			int min_index;
 			for (int k = 0; k < map_landmarks.landmark_list.size(); k++) {
 				double dist = pow(map_landmarks.landmark_list[k].x_f - x_m, 2) + pow(map_landmarks.landmark_list[k].y_f - y_m, 2);
 				if (dist < min_dist) {
 					min_dist = dist;
-					min_id = k+1;
+					min_index = k;
 				}
 			}
 
-			associations.push_back(min_id);
-			sense_x.push_back(x_m);
-			sense_y.push_back(y_m);
+			LandmarkObs obs = LandmarkObs();
+			obs.x = x_m;
+			obs.y = y_m;
+			// storing the index instead of real id as we need it for access to the landmark coordinates below
+			obs.id = min_index;
+			observations_transformed.push_back(obs);
 		}
 
-		// SetAssociations(particles[i], associations, sense_x, sense_y);
+		std::vector<int> associations;
+		std::vector<double> sense_x;
+		std::vector<double> sense_y;
+		for (int j = 0; j < observations.size(); j++) {
+			associations.push_back(map_landmarks.landmark_list[observations_transformed[j].id].id_i);
+			sense_x.push_back(observations_transformed[j].x);
+			sense_y.push_back(observations_transformed[j].y);
+		}
+
+		SetAssociations(particles[i], associations, sense_x, sense_y);
 
 		// calculate weight
 		double weight = 1.0;
 		double std_x = std_landmark[0];
 		double std_y = std_landmark[1];
 		for (int j = 0; j < observations.size(); j++) {
-			int id = associations[j];
+			int id = observations_transformed[j].id;
 			double x = sense_x[j];
-			double x_mu = map_landmarks.landmark_list[id-1].x_f;
+			double x_mu = map_landmarks.landmark_list[id].x_f;
 			double y = sense_y[j];
-			double y_mu = map_landmarks.landmark_list[id-1].y_f;
+			double y_mu = map_landmarks.landmark_list[id].y_f;
 			double norm = 1.0 / (2 * M_PI * std_x * std_y);
 			double exponent = pow(x - x_mu, 2.0) / 2.0 / pow(std_x, 2.0) + pow(y - y_mu, 2.0) / 2.0 / pow(std_y, 2.0);
 			weight *=  norm * exp(-1.0 * exponent);
